@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCarStore } from '../../store'; 
-import { modificationsData } from '../../data/modifications';
+import { cars } from '../../data/cars';
 
 export default function BottomPanel() {
   const selectedEngine = useCarStore(state => state.selectedEngine);
@@ -11,22 +11,24 @@ export default function BottomPanel() {
   // Re-evaluates on render without subscribing to a new object instance directly
   const stats = useCarStore.getState().getComputedStats();
   
-  const engineMod = modificationsData.engine.find(e => e.id === selectedEngine) || modificationsData.engine[2];
+  const selectedModel = useCarStore(state => state.selectedModel);
+  const currentCar = cars[selectedModel] || cars['bugatti'];
+  const engineMod = currentCar.engines.find(e => e.id === selectedEngine) || currentCar.engines[0];
 
   return (
     <div className="pointer-events-auto absolute bottom-0 left-80 right-0 py-8 px-12 bg-gradient-to-t from-black/90 via-black/50 to-transparent flex items-end justify-between transition-all duration-300">
       
       {/* Left Side: Car Info */}
       <div className="flex flex-col gap-2">
-        <h2 className="text-5xl font-light tracking-widest text-white uppercase transition-all duration-500">Veyron</h2>
+        <h2 className="text-5xl font-light tracking-widest text-white uppercase transition-all duration-500">{currentCar.name}</h2>
         <p className="text-gold-500/80 tracking-wide font-medium transition-all duration-500">{engineMod.name}</p>
-        <p className="text-white/50 text-[10px] font-semibold tracking-widest uppercase mt-2">Outputs {stats.hp} HP • Weight {stats.weight} KG</p>
+        <p className="text-white/50 text-[10px] font-semibold tracking-widest uppercase mt-2">Active Performance Config</p>
       </div>
 
       {/* Middle: Animated Stats Bars */}
       <div className="flex gap-10 items-end pb-2">
-        <StatBar label="Top Speed" value={stats.topSpeedPercent} displayValue={`${stats.topSpeedValue} mph`} />
-        <StatBar label="0-60 Time" value={stats.zeroToSixtyPercent} displayValue={`${stats.zeroToSixtyValue}s`} />
+        <StatBar label="Top Speed" value={stats.topSpeedPercent} displayValue={`${stats.topSpeedValue}`} />
+        <StatBar label="0-60 Time" value={stats.zeroToSixtyPercent} displayValue={`${stats.zeroToSixtyValue}`} />
         <StatBar label="Acceleration" value={stats.accelerationPercent} displayValue={`${stats.accelerationValue}`} />
         <StatBar label="Grip" value={stats.gripPercent} displayValue={`${stats.gripValue}`} />
       </div>

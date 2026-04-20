@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import { modificationsData, baseStats } from './data/modifications';
+import { cars } from './data/cars';
 
 export const useCarStore = create(
   persist(
@@ -24,22 +24,32 @@ export const useCarStore = create(
       setIsWheelRotating: (val) => set({ isWheelRotating: val }),
       wheelColor: '#e5e7eb', // Default alloy color
       setWheelColor: (color) => set({ wheelColor: color }),
-      bodyColor: '#1c1c1c', // Default obsidian color
+      bodyColor: '#111111', // Default Nero Nemesis
       setBodyColor: (color) => set({ bodyColor: color }),
-      interiorColor: '#7c2d12', // Default Saddle color
+      interiorColor: '#965b32', // Default Cuoio
       setInteriorColor: (color) => set({ interiorColor: color }),
       cameraPreset: null,
       setCameraPreset: (preset) => set({ cameraPreset: preset }),
       
       activeCategory: 'paint', // controls bottom dock and right panel context
       setActiveCategory: (cat) => set({ activeCategory: cat }),
+      
+      selectedModel: 'bugatti', // 'bugatti', 'ferrari', 'porsche', 'mercedes', 'mclaren'
+      setSelectedModel: (model) => set({ 
+        selectedModel: model,
+        selectedEngine: 'engine_0',
+        engine: 'engine_0',
+        selectedWheels: 'wheels_0',
+        selectedAero: 'aero_0',
+        selectedWeightSetup: 'weight_0'
+      }),
 
       // --- MODIFICATIONS (PERSISTED) ---
-      engine: 'v12', // Backward compatibility for UI
-      selectedEngine: 'v12',
-      selectedWheels: 'stock',
-      selectedAero: 'stock',
-      selectedWeightSetup: 'stock',
+      engine: 'engine_0', // Backward compatibility for UI
+      selectedEngine: 'engine_0',
+      selectedWheels: 'wheels_0',
+      selectedAero: 'aero_0',
+      selectedWeightSetup: 'weight_0',
 
       setEngine: (eng) => set({ engine: eng, selectedEngine: eng }), // Backwards compatibility for ui
       setSelectedEngine: (id) => {
@@ -51,8 +61,7 @@ export const useCarStore = create(
         } catch(e) {}
       },
       setSelectedWheels: (id) => {
-         const wheelObj = modificationsData.wheels.find(w => w.id === id);
-         set({ selectedWheels: id, wheelColor: wheelObj ? wheelObj.color : '#e5e7eb' });
+         set({ selectedWheels: id, wheelColor: '#e5e7eb' });
       },
       setSelectedAero: (id) => set({ selectedAero: id }),
       setSelectedWeightSetup: (id) => set({ selectedWeightSetup: id }),
@@ -60,44 +69,51 @@ export const useCarStore = create(
       // --- COMPUTED PERFORMANCE STATS ---
       getComputedStats: () => {
         const state = get();
-        const engineMod = modificationsData.engine.find(e => e.id === state.selectedEngine) || modificationsData.engine[2];
-        const wheelMod = modificationsData.wheels.find(w => w.id === state.selectedWheels) || modificationsData.wheels[0];
-        const aeroMod = modificationsData.aero.find(a => a.id === state.selectedAero) || modificationsData.aero[0];
-        const weightMod = modificationsData.weight.find(w => w.id === state.selectedWeightSetup) || modificationsData.weight[0];
-
-        const totalWeight = baseStats.weight + engineMod.weightImpact + wheelMod.weightImpact + aeroMod.weightImpact + weightMod.weightImpact;
-        const totalHp = engineMod.hp;
-        const totalGrip = baseStats.grip + wheelMod.gripImpact + aeroMod.gripImpact;
-        const totalDrag = aeroMod.dragCoefficientImpact; 
-
-        // Raw calculations
-        const rawTopSpeed = (totalHp / totalWeight) * 450; 
-        const rawZts = totalWeight / (totalHp * 1.5); 
-        const rawAccel = totalHp / totalWeight * 100;
+        const car = cars[state.selectedModel] || cars['bugatti'];
         
-        let totalPrice = engineMod.price + wheelMod.price + aeroMod.price + weightMod.price;
-        
-        // Convert to percentage values (0-100) for progress bars based on min/max expectations
+        const engineMod = car.engines.find(e => e.id === state.selectedEngine) || car.engines[0];
+        const wheelMod = car.wheels.find(w => w.id === state.selectedWheels) || car.wheels[0];
+        const aeroMod = car.aero.find(a => a.id === state.selectedAero) || car.aero[0];
+        const weightMod = car.weight.find(w => w.id === state.selectedWeightSetup) || car.weight[0];
+
+        const effectSum = (stat) => (engineMod.effect[stat] || 0) + (wheelMod.effect[stat] || 0) + (aeroMod.effect[stat] || 0) + (weightMod.effect[stat] || 0);
+
+        const clamp = (val) => Math.min(100, Math.max(0, val));
+
+        const finalVelocity = clamp(car.baseStats.velocity + effectSum('velocity'));
+        const finalSprint = clamp(car.baseStats.sprint + effectSum('sprint'));
+        const finalThrust = clamp(car.baseStats.thrust + effectSum('thrust'));
+        const finalGrip = clamp(car.baseStats.grip + effectSum('grip'));
+
+        // Calculate total configuration score
+        const rawScore = (finalVelocity * 0.30) + (finalSprint * 0.25) + (finalThrust * 0.25) + (finalGrip * 0.20);
+        const totalConfigScore = Math.round(rawScore);
+
+        // Calculate total cost
+        const totalCost = (engineMod.price || 0) + (wheelMod.price || 0) + (aeroMod.price || 0) + (weightMod.price || 0);
+
+        // Convert directly to UI-friendly values based on clamped 0-100 logic
         return {
-          topSpeedValue: Math.round(rawTopSpeed),
-          zeroToSixtyValue: rawZts.toFixed(1),
-          accelerationValue: Math.round(rawAccel),
-          gripValue: totalGrip,
+          topSpeedValue: finalVelocity,
+          zeroToSixtyValue: finalSprint,
+          accelerationValue: finalThrust,
+          gripValue: finalGrip,
           
-          topSpeedPercent: Math.min(100, Math.max(0, (rawTopSpeed - 150) / (280 - 150) * 100)),
-          zeroToSixtyPercent: Math.min(100, Math.max(0, 100 - ((rawZts - 2.0) / (8.0 - 2.0) * 100))), 
-          accelerationPercent: Math.min(100, Math.max(0, rawAccel)),
-          gripPercent: Math.min(100, Math.max(0, totalGrip)),
+          topSpeedPercent: finalVelocity,
+          zeroToSixtyPercent: finalSprint, 
+          accelerationPercent: finalThrust,
+          gripPercent: finalGrip,
           
-          weight: totalWeight,
-          hp: totalHp,
-          price: `$${totalPrice.toLocaleString()}`
+          totalScore: totalConfigScore,
+          priceValue: totalCost,
+          price: `$${totalCost.toLocaleString()}`
         };
       }
     }),
     {
       name: 'car-tuning-storage', // key in local storage
       partialize: (state) => ({
+        selectedModel: state.selectedModel,
         selectedEngine: state.selectedEngine,
         engine: state.engine,
         selectedWheels: state.selectedWheels,

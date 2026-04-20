@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Settings2, X } from 'lucide-react';
 import { useCarStore } from '../../store';
-import { modificationsData } from '../../data/modifications';
+import { cars } from '../../data/cars';
 
 export default function ModificationsDrawer() {
   const [isOpen, setIsOpen] = useState(false);
@@ -17,11 +17,14 @@ export default function ModificationsDrawer() {
   const setSelectedAero = useCarStore(state => state.setSelectedAero);
   const setSelectedWeight = useCarStore(state => state.setSelectedWeightSetup);
 
+  const selectedModel = useCarStore(state => state.selectedModel);
+  const currentCar = cars[selectedModel] || cars['bugatti'];
+
   const categories = [
-    { id: 'engine', label: 'Engine', current: selectedEngine, setter: setSelectedEngine, data: modificationsData.engine },
-    { id: 'wheels', label: 'Wheels', current: selectedWheels, setter: setSelectedWheels, data: modificationsData.wheels },
-    { id: 'aero', label: 'Aerodynamics', current: selectedAero, setter: setSelectedAero, data: modificationsData.aero },
-    { id: 'weight', label: 'Weight Reduction', current: selectedWeight, setter: setSelectedWeight, data: modificationsData.weight },
+    { id: 'engine', label: 'Engine', current: selectedEngine, setter: setSelectedEngine, data: currentCar.engines },
+    { id: 'wheels', label: 'Wheels', current: selectedWheels, setter: setSelectedWheels, data: currentCar.wheels },
+    { id: 'aero', label: 'Aerodynamics', current: selectedAero, setter: setSelectedAero, data: currentCar.aero },
+    { id: 'weight', label: 'Weight Reduction', current: selectedWeight, setter: setSelectedWeight, data: currentCar.weight },
   ];
 
   const activeData = categories.find(c => c.id === activeCategory);
@@ -79,36 +82,12 @@ export default function ModificationsDrawer() {
               </div>
               
               <div className="grid grid-cols-2 gap-y-4 gap-x-6 text-xs relative z-10">
-                {item.hp > 0 && (
-                  <div className="flex justify-between">
-                     <span className="text-white/40 uppercase tracking-wider text-[10px]">Power</span>
-                     <span className="text-white font-medium">+{item.hp} HP</span>
+                {item.effect && Object.entries(item.effect).map(([key, val]) => val !== 0 && (
+                  <div key={key} className="flex justify-between">
+                     <span className="text-white/40 uppercase tracking-wider text-[10px]">{key}</span>
+                     <span className={val > 0 ? "text-green-400 font-medium" : "text-red-400 font-medium"}>{val > 0 ? '+' : ''}{val}</span>
                   </div>
-                )}
-                {item.torque > 0 && (
-                  <div className="flex justify-between">
-                     <span className="text-white/40 uppercase tracking-wider text-[10px]">Torque</span>
-                     <span className="text-white font-medium">+{item.torque} Nm</span>
-                  </div>
-                )}
-                {item.weightImpact !== 0 && (
-                  <div className="flex justify-between">
-                     <span className="text-white/40 uppercase tracking-wider text-[10px]">Weight</span>
-                     <span className={item.weightImpact < 0 ? 'text-green-400 font-medium' : 'text-red-400 font-medium'}>{item.weightImpact > 0 ? '+' : ''}{item.weightImpact} kg</span>
-                  </div>
-                )}
-                {item.gripImpact !== 0 && (
-                  <div className="flex justify-between">
-                     <span className="text-white/40 uppercase tracking-wider text-[10px]">Grip</span>
-                     <span className="text-gold-400 font-medium">+{item.gripImpact}</span>
-                  </div>
-                )}
-                {item.dragCoefficientImpact !== 0 && (
-                  <div className="flex justify-between">
-                     <span className="text-white/40 uppercase tracking-wider text-[10px]">Drag</span>
-                     <span className={item.dragCoefficientImpact > 0 ? 'text-red-400 font-medium' : 'text-green-400 font-medium'}>{item.dragCoefficientImpact > 0 ? '+' : ''}{item.dragCoefficientImpact} Cd</span>
-                  </div>
-                )}
+                ))}
               </div>
               
               {item.price > 0 && (

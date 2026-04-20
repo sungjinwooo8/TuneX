@@ -1,0 +1,17 @@
+Materials:
+Steel
+Logo
+Tire
+
+Nodes:
+Sketchfab_model
+root
+GLTF_SceneRootNode
+Rim_2
+Object_4
+Object_5
+Tire_3
+Object_7
+Object_8
+Object_9
+Object_10

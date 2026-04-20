@@ -23,7 +23,7 @@ export default function CanvasContainer() {
         <Suspense fallback={null}>
           <CarModel />
           
-          <Environment preset="studio" environmentIntensity={isEngine ? 0.4 : 1.2} />
+          <Environment preset="city" blur={0.6} environmentIntensity={isEngine ? 0.4 : 1.2} />
           
           <ContactShadows 
             resolution={1024} 
@@ -48,7 +48,7 @@ export default function CanvasContainer() {
         />
         <CameraAnimator controls={controlsRef} />
         
-        <EffectComposer disableNormalPass>
+        <EffectComposer disableNormalPass multisampling={4}>
           <Noise opacity={0.015} />
           <Vignette eskil={false} offset={0.1} darkness={1.1} />
         </EffectComposer>

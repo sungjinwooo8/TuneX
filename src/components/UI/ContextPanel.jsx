@@ -1,19 +1,24 @@
-import React from 'react';
+import React, { Suspense } from 'react';
+import * as THREE from 'three';
 import { useCarStore } from '../../store';
-import { modificationsData } from '../../data/modifications';
+import { cars } from '../../data/cars';
+import { Canvas } from '@react-three/fiber';
+import { useGLTF, Environment, Center } from '@react-three/drei';
 
 const colorsExternal = [
-  { name: 'Obsidian Black', value: '#050505' },
-  { name: 'Satin Silver', value: '#d1d5db' },
-  { name: 'Rosso Corsa', value: '#991b1b' },
-  { name: 'Liquid Bronze', value: '#785f3b' },
+  { name: 'Nero Nemesis', value: '#111111' },
+  { name: 'Bianco Avus', value: '#ececeb' },
+  { name: 'Rosso Corsa', value: '#d40000' },
+  { name: 'Riviera Blue', value: '#008ecc' },
+  { name: 'Verde Mantis', value: '#5acc22' },
+  { name: 'Liquid Bronze', value: '#8c6742' },
 ];
 
 const colorsInternal = [
-  { name: 'Saddle Tan', value: '#7c2d12' },
-  { name: 'Carbon Black', value: '#18181b' },
-  { name: 'Ivory White', value: '#f4f4f5' },
-  { name: 'Bordeaux', value: '#7f1d1d' },
+  { name: 'Nero', value: '#121212' },
+  { name: 'Cuoio', value: '#965b32' },
+  { name: 'Crema', value: '#e8e4c9' },
+  { name: 'Rosso', value: '#6e1313' },
 ];
 
 export default function ContextPanel() {
@@ -28,6 +33,9 @@ export default function ContextPanel() {
   // Live stats from engine
   const stats = useCarStore.getState().getComputedStats();
   
+  const selectedModel = useCarStore(state => state.selectedModel);
+  const currentCar = cars[selectedModel] || cars['bugatti'];
+
   // State specific pickers
   const bodyColor = useCarStore(state => state.bodyColor);
   const setBodyColor = useCarStore(state => state.setBodyColor);
@@ -52,6 +60,10 @@ export default function ContextPanel() {
   let ContentRender = null;
 
   switch (activeCategory) {
+    case 'ai':
+      title = 'AI Auto-Tuner';
+      ContentRender = <AIChat currentCar={currentCar} />;
+      break;
     case 'paint':
       title = 'Exterior Finish';
       ContentRender = <ColorPicker colors={colorsExternal} selected={bodyColor} onSelect={setBodyColor} />;
@@ -62,19 +74,19 @@ export default function ContextPanel() {
       break;
     case 'wheels':
       title = 'Alloy Engineering';
-      ContentRender = <HorizontalCards items={modificationsData.wheels} selected={selectedWheels} onSelect={setSelectedWheels} />;
+      ContentRender = <HorizontalCards items={currentCar.wheels} selected={selectedWheels} onSelect={setSelectedWheels} />;
       break;
     case 'aero':
       title = 'Active Aerodynamics';
-      ContentRender = <HorizontalCards items={modificationsData.aero} selected={selectedAero} onSelect={setSelectedAero} />;
+      ContentRender = <HorizontalCards items={currentCar.aero} selected={selectedAero} onSelect={setSelectedAero} />;
       break;
     case 'engine':
       title = 'Heart & Soul';
-      ContentRender = <VerticalCards items={modificationsData.engine} selected={selectedEngine} onSelect={setSelectedEngine} />;
+      ContentRender = <VerticalCards items={currentCar.engines} selected={selectedEngine} onSelect={setSelectedEngine} />;
       break;
     case 'weight':
       title = 'Chassis Diet';
-      ContentRender = <VerticalCards items={modificationsData.weight} selected={selectedWeight} onSelect={setSelectedWeight} />;
+      ContentRender = <VerticalCards items={currentCar.weight} selected={selectedWeight} onSelect={setSelectedWeight} />;
       break;
   }
 
@@ -98,8 +110,8 @@ export default function ContextPanel() {
         {/* Live Segmented Performance Dashboard */}
         <div>
           <h3 className="text-[10px] uppercase tracking-[0.25em] text-white/40 mb-5 font-bold">Telemetry</h3>
-          <SegmentedGauge label="Velocity (Top Speed)" percent={stats.topSpeedPercent} value={`${stats.topSpeedValue} mph`} />
-          <SegmentedGauge label="0-60 Sprint" percent={stats.zeroToSixtyPercent} value={`${stats.zeroToSixtyValue}s`} />
+          <SegmentedGauge label="Velocity (Top Speed)" percent={stats.topSpeedPercent} value={`${stats.topSpeedValue}`} />
+          <SegmentedGauge label="0-60 Sprint" percent={stats.zeroToSixtyPercent} value={`${stats.zeroToSixtyValue}`} />
           <SegmentedGauge label="Kinetic Thrust" percent={stats.accelerationPercent} value={`${stats.accelerationValue}`} />
           <SegmentedGauge label="Mechanical Grip" percent={stats.gripPercent} value={`${stats.gripValue}`} />
         </div>
@@ -112,13 +124,13 @@ export default function ContextPanel() {
 // Subcomponents
 
 const ColorPicker = ({ colors, selected, onSelect }) => (
-  <div className="grid grid-cols-4 gap-4 mt-6">
+  <div className="flex flex-wrap gap-4 mt-6">
     {colors.map(c => (
       <button 
         key={c.name}
         onClick={() => onSelect(c.value)}
         title={c.name}
-        className={`w-12 h-12 rounded-full transition-all duration-500 relative group
+        className={`w-10 h-10 rounded-full transition-all duration-500 relative group
           ${selected === c.value ? 'scale-110 shadow-[0_0_20px_rgba(255,255,255,0.4)] ring-[1.5px] ring-white/60 ring-offset-4 ring-offset-black/90' : 'border border-white/20 hover:scale-105'}
         `}
         style={{ backgroundColor: c.value }}
@@ -139,9 +151,11 @@ const HorizontalCards = ({ items, selected, onSelect }) => (
           ${selected === item.id ? 'border-white/50 shadow-[0_0_30px_rgba(255,255,255,0.15)] ring-1 ring-white/50' : 'border-white/10 hover:border-white/30 bg-white/5'}
         `}
       >
-        <div className="absolute inset-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.15] opacity-30 mix-blend-luminosity" style={{ backgroundImage: `url(${item.image})` }} />
-        {selected === item.id && <div className="absolute inset-0 bg-gradient-to-t from-white/40 to-transparent mix-blend-overlay" />}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent mix-blend-luminosity" />
+        {selected === item.id && <div className="absolute inset-0 bg-gradient-to-t from-white/10 to-transparent mix-blend-overlay" />}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/95 via-black/40 to-transparent z-10" />
+        
+        <ItemThumbnail item={item} />
         
         <div className="relative z-10 text-left">
           <h4 className={`text-[11px] font-bold tracking-[0.15em] uppercase mb-1 drop-shadow-md ${selected === item.id ? 'text-white' : 'text-white/60'}`}>{item.name}</h4>
@@ -164,8 +178,13 @@ const VerticalCards = ({ items, selected, onSelect }) => (
       >
         <div className="relative z-10">
           <h4 className={`text-[11px] font-bold tracking-[0.15em] uppercase drop-shadow-md ${selected === item.id ? 'text-white' : 'text-white/60'}`}>{item.name}</h4>
-          {item.hp > 0 && <p className="text-[10px] text-white/60 tracking-wider mt-1">+{item.hp} HP</p>}
-          {item.weightImpact !== 0 && !item.hp && <p className="text-[10px] text-white/60 tracking-wider mt-1">{item.weightImpact > 0 ? '+' : ''}{item.weightImpact} KG</p>}
+          <div className="flex flex-wrap gap-x-3">
+            {item.effect && Object.entries(item.effect).map(([key, val]) => val !== 0 && (
+              <p key={key} className="text-[10px] text-white/60 tracking-wider mt-1">
+                {val > 0 ? '+' : ''}{val} {key.toUpperCase()}
+              </p>
+            ))}
+          </div>
         </div>
         {selected === item.id && <div className="w-2 h-2 rounded-full bg-white shadow-[0_0_12px_#ffffff]" />}
       </button>
@@ -198,3 +217,140 @@ const SegmentedGauge = ({ label, percent, value }) => {
     </div>
   );
 };
+
+function ThumbnailModel({ url, isCarbon }) {
+  const { scene } = useGLTF(url);
+  const cloned = React.useMemo(() => {
+    const c = scene.clone();
+    
+    // Auto-scale to fit within 1 unit area synchronously
+    const box = new THREE.Box3().setFromObject(c);
+    const size = box.getSize(new THREE.Vector3());
+    const maxDim = Math.max(size.x, size.y, size.z);
+    
+    if (maxDim > 0) {
+      const scale = 1.2 / maxDim; // Adjust fill size
+      c.scale.set(scale, scale, scale);
+    }
+    
+    // Face it slightly towards camera and tilt down
+    c.rotation.y = Math.PI / 5;
+    c.rotation.x = Math.PI / 16;
+
+    return c;
+  }, [scene]);
+  
+  return <primitive object={cloned} />;
+}
+
+function ItemThumbnail({ item }) {
+  let glbPath = null;
+  const nameL = item.name.toLowerCase();
+  
+  if (nameL.includes('carbon')) {
+    glbPath = '/models/stock_mitchlin_pax.glb';
+  } else if (nameL.includes('stock') || nameL.includes('pax') || nameL.includes('standard') || nameL.includes('slicks')) {
+    glbPath = '/models/carbon_fiber_bugatti.glb';
+  }
+  
+  if (!glbPath) return null;
+
+  return (
+    <div className="absolute inset-0 top-0 bottom-12 z-0 pointer-events-none opacity-90 transition-opacity duration-500 group-hover:opacity-100">
+      <Canvas camera={{ position: [1.5, 1, 1.5], fov: 40 }} dpr={[1, 2]} gl={{ preserveDrawingBuffer: false, antialias: true }}>
+        <ambientLight intensity={2} />
+        <directionalLight position={[5, 5, 5]} intensity={2} />
+        <Environment preset="studio" />
+        <Suspense fallback={null}>
+          <Center>
+            <ThumbnailModel url={glbPath} isCarbon={nameL.includes('carbon')} />
+          </Center>
+        </Suspense>
+      </Canvas>
+    </div>
+  );
+}
+
+import { getAiTuningRecommendation } from '../../services/aiClient';
+import { Bot, Sparkles, Loader2 } from 'lucide-react';
+
+const AIChat = ({ currentCar }) => {
+  const [goal, setGoal] = React.useState('');
+  const [loading, setLoading] = React.useState(false);
+  const [message, setMessage] = React.useState('Describe your track or driving goal, and I will instantly configure the optimal parts.');
+
+  const setSelectedEngine = useCarStore(state => state.setSelectedEngine);
+  const setSelectedWheels = useCarStore(state => state.setSelectedWheels);
+  const setSelectedAero = useCarStore(state => state.setSelectedAero);
+
+  const handleConsult = async () => {
+    if (!goal.trim()) return;
+    setLoading(true);
+    setMessage('Analyzing optimal telemetry...');
+    
+    const rec = await getAiTuningRecommendation(goal);
+    
+    if (rec && rec._error === 'RATE_LIMIT') {
+      setMessage('API Quota Exceeded (Too Many Requests). Please wait 1 minute before your next setup.');
+    } else if (rec && !rec._error) {
+      // Map JSON to actual upgrades 
+      // Engine: stock -> 0, anything else -> 1
+      const eIdx = rec.engine === 'stock' ? 0 : 1;
+      // Tires: street -> 0, sport -> 1, racing -> max
+      let tIdx = 0;
+      if (rec.tires === 'sport') tIdx = 1;
+      if (rec.tires === 'racing') tIdx = 2;
+      // Aero: stock -> 0, high_downforce/low_drag -> 1
+      const aIdx = rec.aero === 'stock' ? 0 : 1;
+
+      // Ensure boundaries
+      const finalE = Math.min(eIdx, currentCar.engines.length - 1);
+      const finalT = Math.min(tIdx, currentCar.wheels.length - 1);
+      const finalA = Math.min(aIdx, currentCar.aero.length - 1);
+
+      setSelectedEngine(currentCar.engines[finalE].id);
+      setSelectedWheels(currentCar.wheels[finalT].id);
+      setSelectedAero(currentCar.aero[finalA].id);
+
+      setMessage(`Loadout secured! Deployed: ${rec.engine} powertrain, ${rec.tires} slicks, and ${rec.aero} bodywork.`);
+    } else {
+      setMessage('Comm link failed. Please verify your connection or try again.');
+    }
+    
+    setLoading(false);
+  };
+
+  return (
+    <div className="flex flex-col gap-6 mt-4">
+      <div className="flex items-start gap-4 p-5 bg-gold-500/10 border border-gold-500/20 rounded-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 p-4 opacity-10">
+          <Bot size={64} />
+        </div>
+        <div className="w-10 h-10 shrink-0 bg-gold-500/20 rounded-full flex items-center justify-center border border-gold-500/30">
+           <Sparkles size={18} className="text-gold-500" />
+        </div>
+        <p className="text-sm font-light text-white tracking-wide leading-relaxed">
+          {message}
+        </p>
+      </div>
+
+      <div className="flex flex-col gap-3">
+        <textarea
+          value={goal}
+          onChange={(e) => setGoal(e.target.value)}
+          placeholder="E.g., I want to dominate the Nürburgring..."
+          className="w-full h-24 bg-white/5 border border-white/10 hover:border-white/20 focus:border-gold-500 focus:ring-1 focus:ring-gold-500 rounded-xl p-4 text-sm text-white placeholder-white/30 resize-none transition-all outline-none"
+        />
+        
+        <button
+          onClick={handleConsult}
+          disabled={loading || !goal.trim()}
+          className="w-full bg-white text-black font-bold tracking-widest uppercase text-xs py-4 rounded-xl hover:bg-gold-500 hover:text-white transition-all duration-300 disabled:opacity-50 disabled:hover:bg-white disabled:hover:text-black flex items-center justify-center gap-2"
+        >
+          {loading ? <Loader2 className="animate-spin" size={16} /> : 'Process Configuration'}
+        </button>
+      </div>
+    </div>
+  );
+};
+

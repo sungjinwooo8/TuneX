@@ -3,6 +3,8 @@ import CanvasContainer from './components/CanvasContainer';
 import TopNav from './components/UI/TopNav';
 import BottomDock from './components/UI/BottomDock';
 import ContextPanel from './components/UI/ContextPanel';
+import Sidebar from './components/UI/Sidebar';
+import PriceDisplay from './components/UI/PriceDisplay';
 
 function App() {
   return (
@@ -15,8 +17,10 @@ function App() {
       {/* UI Layer */}
       <div className="relative z-10 w-full h-full pointer-events-none flex">
         <TopNav />
+        <Sidebar />
         <ContextPanel />
         <BottomDock />
+        <PriceDisplay />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 import React from 'react';
 import { useCarStore } from '../../store';
-import { Palette, Disc, Wind, Zap, Settings, Gauge } from 'lucide-react';
+import { Palette, Disc, Wind, Zap, Settings, Gauge, Bot } from 'lucide-react';
 
 const categories = [
   { id: 'paint', label: 'Paint', icon: Palette },
@@ -9,6 +9,7 @@ const categories = [
   { id: 'engine', label: 'Power', icon: Zap },
   { id: 'interior', label: 'Interior', icon: Settings },
   { id: 'weight', label: 'Weight', icon: Gauge },
+  { id: 'ai', label: 'AI Advisor', icon: Bot },
 ];
 
 export default function BottomDock() {
