@@ -23,10 +23,8 @@ dist-ssr
 *.sln
 *.sw?
 
-# Large asset files (not needed in git — deploy separately)
-assets/
+# Large asset files
 mercedes_hierarchy.json
 dump.js
 npm_install_log.txt
 debug_gltf.js
-public/models/*.glb
