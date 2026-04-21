@@ -28,3 +28,4 @@ mercedes_hierarchy.json
 dump.js
 npm_install_log.txt
 debug_gltf.js
+public/models/*.glb
