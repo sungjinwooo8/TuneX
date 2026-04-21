@@ -4,12 +4,13 @@ import { useGLTF, useTexture } from '@react-three/drei';
 import { useFrame } from '@react-three/fiber';
 import * as SkeletonUtils from 'three/examples/jsm/utils/SkeletonUtils.js';
 import { useCarStore } from '../store';
+import { MODEL_CONFIG } from '../config/models';
 
 export default function CarModel(props) {
   const selectedModel = useCarStore((state) => state.selectedModel) || 'bugatti';
-  const { scene } = useGLTF(`/models/${selectedModel}.glb`);
-  const carbonWheelGltf = useGLTF('/models/carbon_fiber_bugatti.glb');
-  const paxWheelGltf = useGLTF('/models/stock_mitchlin_pax.glb');
+  const { scene } = useGLTF(MODEL_CONFIG.getUrl(selectedModel));
+  const carbonWheelGltf = useGLTF(MODEL_CONFIG.getUrl('carbon_fiber'));
+  const paxWheelGltf = useGLTF(MODEL_CONFIG.getUrl('pax_michelin'));
   const groupRef = useRef();
 
   // Load User Tectures
@@ -491,10 +492,10 @@ export default function CarModel(props) {
   );
 }
 
-useGLTF.preload('/models/bugatti.glb');
-useGLTF.preload('/models/ferrari.glb');
-useGLTF.preload('/models/porsche.glb');
-useGLTF.preload('/models/mercedes.glb');
-useGLTF.preload('/models/mclaren.glb');
-useGLTF.preload('/models/carbon_fiber_bugatti.glb');
-useGLTF.preload('/models/stock_mitchlin_pax.glb');
+useGLTF.preload(MODEL_CONFIG.getUrl('bugatti'));
+useGLTF.preload(MODEL_CONFIG.getUrl('ferrari'));
+useGLTF.preload(MODEL_CONFIG.getUrl('porsche'));
+useGLTF.preload(MODEL_CONFIG.getUrl('mercedes'));
+useGLTF.preload(MODEL_CONFIG.getUrl('mclaren'));
+useGLTF.preload(MODEL_CONFIG.getUrl('carbon_fiber'));
+useGLTF.preload(MODEL_CONFIG.getUrl('pax_michelin'));

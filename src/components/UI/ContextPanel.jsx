@@ -4,6 +4,7 @@ import { useCarStore } from '../../store';
 import { cars } from '../../data/cars';
 import { Canvas } from '@react-three/fiber';
 import { useGLTF, Environment, Center } from '@react-three/drei';
+import { MODEL_CONFIG } from '../../config/models';
 
 const colorsExternal = [
   { name: 'Nero Nemesis', value: '#111111' },
@@ -248,9 +249,9 @@ function ItemThumbnail({ item }) {
   const nameL = item.name.toLowerCase();
   
   if (nameL.includes('carbon')) {
-    glbPath = '/models/stock_mitchlin_pax.glb';
+    glbPath = MODEL_CONFIG.getUrl('pax_michelin');
   } else if (nameL.includes('stock') || nameL.includes('pax') || nameL.includes('standard') || nameL.includes('slicks')) {
-    glbPath = '/models/carbon_fiber_bugatti.glb';
+    glbPath = MODEL_CONFIG.getUrl('carbon_fiber');
   }
   
   if (!glbPath) return null;

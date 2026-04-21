@@ -88,11 +88,13 @@ export default function CameraAnimator({ controls }) {
     
   }, [activeCategory, cameraPreset, camera, controls]);
 
-  // Subtle breathing idle animation
+  // Subtle breathing idle animation using stable timestamp
   useFrame((state) => {
     if (!controls.current) return;
-    const t = state.clock.getElapsedTime();
-    // Inject tiny bobbing motion directly to the camera matrix to simulate breathing
+    // Use internal state.clock gracefully or fallback to performance
+    const t = (state.clock ? state.clock.getElapsedTime() : performance.now() / 1000);
+    
+    // Inject tiny bobbing motion to simulate breathing
     camera.position.y += Math.sin(t * 1.5) * 0.001;
     camera.position.x += Math.cos(t * 1.2) * 0.001;
   });
